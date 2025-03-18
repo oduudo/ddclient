@@ -137,6 +137,8 @@ sub subst_var {
 
 my $etc = subst_var('@confdir@', '/etc/ddclient');
 my $cachedir = subst_var('@localstatedir@', '/var') . '/cache/ddclient';
+# uj geändert tmpdir als Variable aus Conffile
+my $tmpdir = subst_var('@localstatedir@', '/var') . '/tmp/ddclient';
 our @curl = (subst_var('@CURL@', 'curl'));
 
 our $emailbody = '';
@@ -689,12 +691,14 @@ sub setv {
         'minimum'  => shift,
     };
 }
+# uj geändert tmpdir als Variable aus Conffile
 our %cfgvars = (
     'global-defaults' => {
         'daemon'              => setv(T_DELAY, 0, $daemon_default,      interval('60s')),
         'foreground'          => setv(T_BOOL,  0, 0,                    undef),
         'file'                => setv(T_FILE,  0, "$etc/$program.conf", undef),
         'cache'               => setv(T_FILE,  0, "$cachedir/$program.cache", undef),
+        'tmpdir'              => setv(T_FILE,  0, "$tmpdir",            undef),
         'pid'                 => setv(T_FILE,  0, undef,                undef),
         'proxy'               => setv(T_FQDNP, 0, undef,                undef),
         'protocol'            => setv(T_PROTO, 0, 'dyndns2',            undef),
@@ -1370,6 +1374,7 @@ $opt{'version'} = sub {
     exit(0);
 };
 
+# uj geändert tmpdir als Variable aus Conffile
 my @opt = (
     "usage: ${program} [options]",
     "options are:",
@@ -1381,6 +1386,7 @@ my @opt = (
     ["list-protocols",    "",   "--list-protocols       : print a machine-readable list of supported update protocols and exit. Format: one per line"],
     ["file",              "=s", "--file=<path>          : load configuration information from <path>"],
     ["cache",             "=s", "--cache=<path>         : record address used in <path>"],
+    ["tmpdir",            "=s", "--tmpdir=<path>        : record address used in <path>"],
     ["pid",               "=s", "--pid=<path>           : record process id in <path> if daemonized"],
     "",
     ["use",               "=s", "--use=<which>          : deprecated, see '--usev4' and '--usev6'"],
@@ -2795,7 +2801,10 @@ sub curl_cmd {
 
     # Hard code to /tmp rather than use system TMPDIR to protect from malicious
     # shell instructions in TMPDIR environment variable.  All systems should have /tmp.
-    $tfh = File::Temp->new(DIR => '/tmp',
+
+    # uj geändert
+    # tmpdir als variable aus confile
+    $tfh = File::Temp->new(DIR => opt('tmpdir'),
                            TEMPLATE => 'ddclient_XXXXXXXXXX');
     $tmpfile = $tfh->filename;
 
